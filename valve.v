@@ -3,8 +3,7 @@ module main
 import flag
 import os
 import v.ast
-import v.checker
-import v.parser
+import v.builder
 import v.pref
 import v.token
 import v.util as vutil
@@ -291,18 +290,30 @@ fn main() {
         exit(2)
     }
 
-    table := ast.new_table()
-    pref_ := &pref.Preferences{}
+    // The builder is used here as file dependencies are needed to properly
+    // check the file.
+    mut p := pref.new_preferences()
+    p.is_shared = true
+    p.lookup_path << find_vlib()
 
-    parsed_file := parser.parse_file(files[0], table, .parse_comments, pref_)
-    // Checker is needed to populate types in the ast.
-    mut checker_ := checker.new_checker(table, pref_)
-    checker_.check(parsed_file)
+    mut b := builder.new_builder(p)
+    mut all_files := []string{cap: files.len + 100}
+    all_files << files
+    all_files << b.get_builtin_files()
+    b.front_and_middle_stages(all_files)!
 
-    mut verifier := new_verifier(files[0], table, verbose)
+    mut verifier := new_verifier(files[0], b.table, verbose)
     defer { verifier.free() }
-    for stmt in parsed_file.stmts {
-        verifier.visit(stmt) or { continue }
+
+    normalised_files := files.map(os.norm_path(os.abs_path(it)))
+    for file in b.parsed_files {
+        if os.norm_path(os.abs_path(file.path)) !in normalised_files {
+            continue
+        }
+
+        for stmt in file.stmts {
+            verifier.visit(stmt) or { continue }
+        }
     }
 
     if verifier.error_count > 0 {
