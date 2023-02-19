@@ -17,6 +17,8 @@ struct C.Z3_solver {}
 struct C.Z3_ast {}
 [typedef]
 struct C.Z3_sort {}
+[typedef]
+struct C.Z3_symbol {}
 
 
 fn C.Z3_mk_config() C.Z3_config
@@ -55,3 +57,6 @@ fn C.Z3_mk_and(c C.Z3_context, n u32, a &C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_or(c C.Z3_context, n u32, a &C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_not(c C.Z3_context, a C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_int64(c C.Z3_context, n i64, s C.Z3_sort) C.Z3_ast
+
+fn C.Z3_mk_string_symbol(c C.Z3_context, s &u8) C.Z3_symbol
+fn C.Z3_mk_const(c C.Z3_context, s C.Z3_symbol, s C.Z3_sort) C.Z3_ast
