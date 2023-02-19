@@ -3,6 +3,7 @@ module main
 import flag
 import os
 import v.ast
+import v.checker
 import v.parser
 import v.pref
 import v.token
@@ -251,6 +252,9 @@ fn main() {
     pref_ := &pref.Preferences{}
 
     parsed_file := parser.parse_file(files[0], table, .parse_comments, pref_)
+    // Checker is needed to populate types in the ast.
+    mut checker_ := checker.new_checker(table, pref_)
+    checker_.check(parsed_file)
 
     mut verifier := new_verifier(files[0], table, verbose)
     defer { verifier.free() }
