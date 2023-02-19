@@ -144,6 +144,24 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                             args := [v.visit(node.left), v.visit(node.right)]!
                             return C.Z3_mk_or(v.ctx, 2, &args[0])
                         }
+                        .plus {
+                            args := [v.visit(node.left), v.visit(node.right)]!
+                            return C.Z3_mk_add(v.ctx, 2, &args[0])
+                        }
+                        .mul {
+                            args := [v.visit(node.left), v.visit(node.right)]!
+                            return C.Z3_mk_mul(v.ctx, 2, &args[0])
+                        }
+                        .minus {
+                            args := [v.visit(node.left), v.visit(node.right)]!
+                            return C.Z3_mk_sub(v.ctx, 2, &args[0])
+                        }
+                        .div {
+                            return C.Z3_mk_div(v.ctx, v.visit(node.left), v.visit(node.right))
+                        }
+                        .mod {
+                            return C.Z3_mk_mod(v.ctx, v.visit(node.left), v.visit(node.right))
+                        }
                         else {
                             eprintln("unhandled op in infix expr: ${node.op}")
                         }
