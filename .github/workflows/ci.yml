@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: install dependencies
+        run: |
+          sudo apt-get install --no-install-recommends -y gcc z3 libz3-dev
+
+      - name: setup V
+        uses: vlang/setup-v@v1.3
+
+      - name: build
+        run: |
+          make valve
+
+      - name: test
+        run: |
+          make check
