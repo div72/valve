@@ -11,6 +11,7 @@ import v.util as vutil
 struct Verifier {
     file_path string
     verbose bool
+    table ast.Table
 mut:
     error_count int
 
@@ -19,13 +20,13 @@ mut:
     facts []C.Z3_ast
 }
 
-fn new_verifier(file_path string, verbose bool) Verifier {
+fn new_verifier(file_path string, table ast.Table, verbose bool) Verifier {
     cfg := C.Z3_mk_config()
     defer { C.Z3_del_config(cfg) }
 
     ctx := C.Z3_mk_context(cfg)
 
-    return Verifier{ctx: ctx, file_path: file_path, verbose: verbose}
+    return Verifier{ctx: ctx, file_path: file_path, table: table, verbose: verbose}
 }
 
 fn (mut v Verifier) free() {
@@ -197,7 +198,7 @@ fn main() {
 
     parsed_file := parser.parse_file(file_name, table, .parse_comments, pref_)
 
-    mut verifier := new_verifier(file_name, false)
+    mut verifier := new_verifier(file_name, table, false)
     defer { verifier.free() }
     for stmt in parsed_file.stmts {
         verifier.visit(stmt)
