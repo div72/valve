@@ -205,6 +205,21 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                         v.error("failed to prove assertion", node.pos)
                     }
                 }
+                ast.AssignStmt {
+                    for i in 0 .. node.left.len {
+                        left := node.left[i]
+                        right := node.right[i]
+
+                        // TODO: Handle variables being changed.
+                        fact := C.Z3_mk_eq(v.ctx, v.visit(left), v.visit(right))
+                        v.facts << fact
+                    }
+                }
+                ast.ConstDecl {
+                    for field in node.fields {
+                        v.facts << C.Z3_mk_eq(v.ctx, v.make_variable(field.name, field.typ), v.visit(field.expr))
+                    }
+                }
                 ast.ExprStmt {
                     return v.visit(node.expr)
                 }
