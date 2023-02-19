@@ -101,11 +101,12 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                     // If is also being treated as a stmt rather than an
                     // expression. That makes things easier and less
                     // complicated for now.
+                    previous_length := v.facts.len
                     v.facts << v.visit(node.branches[0].cond)
                     for stmt in node.branches[0].stmts {
                         v.visit(stmt)
                     }
-                    v.facts.pop()
+                    v.facts.trim(previous_length)
                 }
                 ast.IndexExpr {
                     if node.index is ast.IntegerLiteral {
