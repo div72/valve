@@ -43,6 +43,7 @@ fn C.Z3_solver_push(c C.Z3_context, s C.Z3_solver)
 fn C.Z3_solver_assert(c C.Z3_context, s C.Z3_solver, a C.Z3_ast)
 
 
+fn C.Z3_mk_bool_sort(c C.Z3_context) C.Z3_sort
 fn C.Z3_mk_int_sort(c C.Z3_context) C.Z3_sort
 
 fn C.Z3_mk_true(c C.Z3_context) C.Z3_ast

@@ -39,9 +39,16 @@ fn (mut v Verifier) error(msg string, pos token.Pos) {
     v.error_count += 1
 }
 
-fn (mut v Verifier) make_variable(name string) C.Z3_ast {
+fn (mut v Verifier) make_variable(name string, typ ast.Type) C.Z3_ast {
     symbol := C.Z3_mk_string_symbol(v.ctx, name.str)
-    return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_int_sort(v.ctx))
+    if typ.is_int() {
+        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_int_sort(v.ctx))
+    } else if typ.is_bool() {
+        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
+    } else {
+        eprintln("unhandled variable type: ${typ}")
+        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
+    }
 }
 
 fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
@@ -93,8 +100,8 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                         v.visit(arg.expr)
                     }
                 }
-                ast.Ident, ast.SelectorExpr {
-                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) })
+                ast.Ident {
+                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.info.typ)
                 }
                 ast.IfExpr {
                     // Else and other branches not handled yet.
@@ -110,7 +117,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 }
                 ast.IndexExpr {
                     left := get_name(node.left) or { v.error("could not get name of expression. (use temp?)", node.pos) return C.Z3_mk_true(v.ctx) }
-                    var := v.make_variable("${left}.len")
+                    var := v.make_variable("${left}.len", ast.int_type_idx)
                     if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(node.index), var)) {
                         v.error("cannot ensure array access is in bounds", node.left.pos().extend(node.pos))
                     }
@@ -179,6 +186,9 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                             eprintln("unhandled op in prefix expr: ${node.op}")
                         }
                     }
+                }
+                ast.SelectorExpr {
+                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.typ)
                 }
                 else {
                     eprintln("unhandled expr type: ${node.type_name()}")
