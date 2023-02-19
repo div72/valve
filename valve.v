@@ -1,5 +1,6 @@
 module main
 
+import flag
 import os
 import v.ast
 import v.parser
@@ -201,23 +202,32 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
 }
 
 fn main() {
-    if os.args.len != 2 {
-        eprintln("USAGE: valve <file name>")
-        eprintln("\nA basic static analyzer powered by Z3. Checks if a V programs assertions are provable.")
+    mut fp := flag.new_flag_parser(os.args)
+
+    fp.application("valve")
+    fp.version("v1.0.0")
+    fp.description("A basic static analyzer powered by Z3. Verifies assertions and array accesses.")
+    fp.skip_executable()
+    verbose := fp.bool("verbose", `v`, false, "enables verbose mode. reports facts used in assertions.")
+    fp.limit_free_args_to_exactly(1)!
+    fp.arguments_description("file")
+    files := fp.finalize() or {
+        // TODO: handle other errors.
+        eprintln("error: You need to specify a file.")
+        eprintln(fp.usage())
         exit(2)
     }
 
-    file_name := os.args[1]
-    if !os.is_file(file_name) || !os.is_readable(file_name) {
-        eprintln("error: not readable file: ${file_name}")
+    if !os.is_file(files[0]) || !os.is_readable(files[0]) {
+        eprintln("error: not readable file: ${files[0]}")
     }
 
     table := ast.new_table()
     pref_ := &pref.Preferences{}
 
-    parsed_file := parser.parse_file(file_name, table, .parse_comments, pref_)
+    parsed_file := parser.parse_file(files[0], table, .parse_comments, pref_)
 
-    mut verifier := new_verifier(file_name, table, false)
+    mut verifier := new_verifier(files[0], table, verbose)
     defer { verifier.free() }
     for stmt in parsed_file.stmts {
         verifier.visit(stmt)
