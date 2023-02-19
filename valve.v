@@ -41,14 +41,21 @@ fn (mut v Verifier) error(msg string, pos token.Pos) {
 }
 
 fn (mut v Verifier) make_variable(name string, typ ast.Type) C.Z3_ast {
+    if v.verbose {
+        eprintln("requesting name for ${name}")
+    }
     symbol := C.Z3_mk_string_symbol(v.ctx, name.str)
     if typ.is_int() {
         return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_int_sort(v.ctx))
     } else if typ.is_bool() {
         return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
-    } else {
-        eprintln("unhandled variable type: ${typ}")
+    } else if typ == 0 {
+        eprintln("This should never happen. (typ == 0)")
         return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
+    } else {
+        type_name := v.table.sym(typ).name
+        eprintln("unhandled variable type: ${type_name}")
+        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_uninterpreted_sort(v.ctx, C.Z3_mk_string_symbol(v.ctx, type_name.str)))
     }
 }
 
@@ -191,7 +198,16 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     }
                 }
                 ast.SelectorExpr {
-                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.typ)
+                    // FIXME: V bug. node.typ can be 0 when node has a valid
+                    // type.
+                    mut typ := node.typ
+                    if typ == 0 && node.expr_type != 0 {
+                        sym := v.table.sym(node.expr_type)
+                        if sym.kind in [.array, .array_fixed] && node.field_name == "len" {
+                            typ = ast.int_type_idx
+                        }
+                    }
+                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return none }, typ)
                 }
                 else {
                     eprintln("unhandled expr type: ${node.type_name()}")
