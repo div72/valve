@@ -38,6 +38,11 @@ fn (mut v Verifier) error(msg string, pos token.Pos) {
     v.error_count += 1
 }
 
+fn (mut v Verifier) make_variable(name string) C.Z3_ast {
+    symbol := C.Z3_mk_string_symbol(v.ctx, name.str)
+    return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_int_sort(v.ctx))
+}
+
 fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
     // It seems like solvers are single use.
     solver := C.Z3_mk_solver(v.ctx)
@@ -97,6 +102,17 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                         v.visit(stmt)
                     }
                     v.facts.pop()
+                }
+                ast.IndexExpr {
+                    if node.index is ast.IntegerLiteral {
+                        left := get_name(node.left) or { v.error("could not get name of expression. (use temp?)", node.pos) return C.Z3_mk_true(v.ctx) }
+                        var := v.make_variable("${left}_len")
+                        if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(ast.Expr(node.index)), var)) {
+                            v.error("cannot ensure array access is in bounds", node.pos)
+                        }
+                    } else {
+                        eprintln("unhandled index expr type: ${node.index.type_name()}")
+                    }
                 }
                 ast.InfixExpr {
                     match node.op {
