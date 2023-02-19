@@ -261,6 +261,7 @@ fn main() {
 
     if !os.is_file(files[0]) || !os.is_readable(files[0]) {
         eprintln("error: not readable file: ${files[0]}")
+        exit(2)
     }
 
     table := ast.new_table()
