@@ -89,7 +89,7 @@ fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
     C.Z3_solver_dec_ref(v.ctx, solver)
 }
 
-pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
+pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
     match node {
         ast.Expr {
             match node {
@@ -98,7 +98,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 }
                 ast.CallExpr {
                     for arg in node.args {
-                        v.visit(arg.expr)
+                        v.visit(arg.expr) or { continue }
                     }
                 }
                 ast.Ident {
@@ -110,65 +110,67 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                     // expression. That makes things easier and less
                     // complicated for now.
                     previous_length := v.facts.len
-                    v.facts << v.visit(node.branches[0].cond)
+                    if fact := v.visit(node.branches[0].cond) {
+                        v.facts << fact
+                    }
                     for stmt in node.branches[0].stmts {
-                        v.visit(stmt)
+                        v.visit(stmt) or { continue }
                     }
                     v.facts.trim(previous_length)
                 }
                 ast.IndexExpr {
                     left := get_name(node.left) or { v.error("could not get name of expression. (use temp?)", node.pos) return C.Z3_mk_true(v.ctx) }
                     var := v.make_variable("${left}.len", ast.int_type_idx)
-                    if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(node.index), var)) {
+                    if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(node.index)?, var)) {
                         v.error("cannot ensure array access is in bounds", node.left.pos().extend(node.pos))
                     }
                 }
                 ast.InfixExpr {
                     match node.op {
                         .eq {
-                            return C.Z3_mk_eq(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_eq(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .ne {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_distinct(v.ctx, 2, &args[0])
                         }
                         .gt {
-                            return C.Z3_mk_gt(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_gt(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .lt {
-                            return C.Z3_mk_lt(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_lt(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .ge {
-                            return C.Z3_mk_ge(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_ge(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .le {
-                            return C.Z3_mk_le(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_le(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .and {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_and(v.ctx, 2, &args[0])
                         }
                         .logical_or {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_or(v.ctx, 2, &args[0])
                         }
                         .plus {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_add(v.ctx, 2, &args[0])
                         }
                         .mul {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_mul(v.ctx, 2, &args[0])
                         }
                         .minus {
-                            args := [v.visit(node.left), v.visit(node.right)]!
+                            args := [v.visit(node.left)?, v.visit(node.right)?]!
                             return C.Z3_mk_sub(v.ctx, 2, &args[0])
                         }
                         .div {
-                            return C.Z3_mk_div(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_div(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .mod {
-                            return C.Z3_mk_mod(v.ctx, v.visit(node.left), v.visit(node.right))
+                            return C.Z3_mk_mod(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         else {
                             eprintln("unhandled op in infix expr: ${node.op}")
@@ -181,7 +183,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 ast.PrefixExpr {
                     match node.op {
                         .not {
-                            return C.Z3_mk_not(v.ctx, v.visit(node.right))
+                            return C.Z3_mk_not(v.ctx, v.visit(node.right)?)
                         }
                         else {
                             eprintln("unhandled op in prefix expr: ${node.op}")
@@ -199,7 +201,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
         ast.Stmt {
             match node {
                 ast.AssertStmt {
-                    expr := v.visit(node.expr)
+                    expr := v.visit(node.expr)?
 
                     if !v.ensure(expr) {
                         v.error("failed to prove assertion", node.pos)
@@ -211,13 +213,13 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                         right := node.right[i]
 
                         // TODO: Handle variables being changed.
-                        fact := C.Z3_mk_eq(v.ctx, v.visit(left), v.visit(right))
+                        fact := C.Z3_mk_eq(v.ctx, v.visit(left) or { continue }, v.visit(right) or { continue })
                         v.facts << fact
                     }
                 }
                 ast.ConstDecl {
                     for field in node.fields {
-                        v.facts << C.Z3_mk_eq(v.ctx, v.make_variable(field.name, field.typ), v.visit(field.expr))
+                        v.facts << C.Z3_mk_eq(v.ctx, v.make_variable(field.name, field.typ), v.visit(field.expr) or { continue })
                     }
                 }
                 ast.ExprStmt {
@@ -225,7 +227,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 }
                 ast.FnDecl {
                     for stmt in node.stmts {
-                        v.visit(stmt)
+                        v.visit(stmt) or { continue }
                     }
                 }
                 ast.AsmStmt, ast.Module {}
@@ -239,7 +241,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
         }
     }
 
-    return C.Z3_mk_true(v.ctx)
+    return none
 }
 
 fn main() {
@@ -275,7 +277,7 @@ fn main() {
     mut verifier := new_verifier(files[0], table, verbose)
     defer { verifier.free() }
     for stmt in parsed_file.stmts {
-        verifier.visit(stmt)
+        verifier.visit(stmt) or { continue }
     }
 
     if verifier.error_count > 0 {
