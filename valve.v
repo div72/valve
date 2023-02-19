@@ -58,8 +58,8 @@ fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
 
     if v.verbose {
         unsafe {
-            eprintln("Attempting to ensure: ${tos2(C.Z3_ast_to_string(v.ctx, expr))}")
-            eprintln("with facts: ${v.facts.map(tos2(C.Z3_ast_to_string(v.ctx, it))).join('; ')}")
+            eprintln("Attempting to ensure: ${tos_clone(C.Z3_ast_to_string(v.ctx, expr))}")
+            eprintln("with facts: ${v.facts.map(tos_clone(C.Z3_ast_to_string(v.ctx, it))).join('; ')}")
         }
     }
 
