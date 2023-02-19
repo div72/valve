@@ -111,7 +111,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                         left := get_name(node.left) or { v.error("could not get name of expression. (use temp?)", node.pos) return C.Z3_mk_true(v.ctx) }
                         var := v.make_variable("${left}.len")
                         if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(ast.Expr(node.index)), var)) {
-                            v.error("cannot ensure array access is in bounds", node.pos)
+                            v.error("cannot ensure array access is in bounds", node.left.pos().extend(node.pos))
                         }
                     } else {
                         eprintln("unhandled index expr type: ${node.index.type_name()}")
