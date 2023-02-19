@@ -109,7 +109,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 ast.IndexExpr {
                     if node.index is ast.IntegerLiteral {
                         left := get_name(node.left) or { v.error("could not get name of expression. (use temp?)", node.pos) return C.Z3_mk_true(v.ctx) }
-                        var := v.make_variable("${left}_len")
+                        var := v.make_variable("${left}.len")
                         if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(ast.Expr(node.index)), var)) {
                             v.error("cannot ensure array access is in bounds", node.pos)
                         }
