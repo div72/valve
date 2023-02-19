@@ -198,16 +198,18 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     }
                 }
                 ast.SelectorExpr {
+                    // FIXME: V bug. Using node.typ breaks the whole
+                    // smartcasting.
+                    mut node_ := node
                     // FIXME: V bug. node.typ can be 0 when node has a valid
                     // type.
-                    mut typ := node.typ
-                    if typ == 0 && node.expr_type != 0 {
+                    if node_.typ == 0 && node.expr_type != 0 {
                         sym := v.table.sym(node.expr_type)
                         if sym.kind in [.array, .array_fixed] && node.field_name == "len" {
-                            typ = ast.int_type_idx
+                            node_.typ = ast.int_type_idx
                         }
                     }
-                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return none }, typ)
+                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return none }, node_.typ)
                 }
                 else {
                     eprintln("unhandled expr type: ${node.type_name()}")
