@@ -212,6 +212,13 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                         left := node.left[i]
                         right := node.right[i]
 
+                        if right is ast.ArrayInit {
+                            if (right.is_fixed && right.has_val) || (!right.is_fixed && right.exprs.len > 0) {
+                                name := get_name(left) or { continue }
+                                v.facts << C.Z3_mk_eq(v.ctx, v.make_variable("${name}.len", ast.int_type_idx), C.Z3_mk_int64(v.ctx, right.exprs.len, C.Z3_mk_int_sort(v.ctx)))
+                            }
+                        }
+
                         // TODO: Handle variables being changed.
                         fact := C.Z3_mk_eq(v.ctx, v.visit(left) or { continue }, v.visit(right) or { continue })
                         v.facts << fact
