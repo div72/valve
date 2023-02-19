@@ -81,6 +81,11 @@ pub fn (mut v Verifier) visit(node &ast.Node) C.Z3_ast {
                 ast.BoolLiteral {
                     return if node.val { C.Z3_mk_true(v.ctx) } else { C.Z3_mk_false(v.ctx) }
                 }
+                ast.CallExpr {
+                    for arg in node.args {
+                        v.visit(arg.expr)
+                    }
+                }
                 ast.IfExpr {
                     // Else and other branches not handled yet.
                     // If is also being treated as a stmt rather than an
