@@ -46,6 +46,7 @@ fn C.Z3_solver_assert(c C.Z3_context, s C.Z3_solver, a C.Z3_ast)
 fn C.Z3_mk_array_sort(c C.Z3_context, d C.Z3_sort, r C.Z3_sort) C.Z3_sort
 fn C.Z3_mk_bool_sort(c C.Z3_context) C.Z3_sort
 fn C.Z3_mk_int_sort(c C.Z3_context) C.Z3_sort
+fn C.Z3_mk_bv_sort(c C.Z3_context, n int) C.Z3_sort
 fn C.Z3_mk_real_sort(c C.Z3_context) C.Z3_sort
 fn C.Z3_mk_uninterpreted_sort(c C.Z3_context, s C.Z3_symbol) C.Z3_sort
 
@@ -73,8 +74,20 @@ fn C.Z3_mk_bvand(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_bvshl(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_bvlshr(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_bvashr(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvneg(c C.Z3_context, a C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvadd(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvmul(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsub(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsdiv(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsmod(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvslt(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsle(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsgt(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvsge(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_int64(c C.Z3_context, n i64, s C.Z3_sort) C.Z3_ast
 fn C.Z3_mk_select(c C.Z3_context, a C.Z3_ast, i C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_int2bv(c C.Z3_context, n int, a C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bv2int(c C.Z3_context, a C.Z3_ast, is_signed bool) C.Z3_ast
 
 fn C.Z3_mk_string_symbol(c C.Z3_context, s &u8) C.Z3_symbol
 fn C.Z3_mk_const(c C.Z3_context, s C.Z3_symbol, s C.Z3_sort) C.Z3_ast
