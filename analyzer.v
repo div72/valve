@@ -157,7 +157,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
 
                     v.facts.trim(previous_facts_marker)
                 }
-                ast.CastExpr {
+                ast.CastExpr, ast.ParExpr {
                     return v.visit(node.expr)
                 }
                 ast.Ident {
