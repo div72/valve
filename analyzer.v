@@ -145,7 +145,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     v.facts.trim(previous_facts_marker)
                 }
                 ast.CastExpr {
-                    v.visit(node.expr)
+                    return v.visit(node.expr)
                 }
                 ast.Ident {
                     return v.make_variable(get_name(ast.Expr(node)) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.info.typ)
@@ -316,6 +316,9 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     eprintln("unhandled stmt type: ${node.type_name()}")
                 }
             }
+        }
+        ast.Param {
+            return v.make_variable(node.name, node.typ)
         }
         else {
             eprintln("unhandled node type: ${node.type_name()}")
