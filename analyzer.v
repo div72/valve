@@ -183,6 +183,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     if !v.ensure(C.Z3_mk_lt(v.ctx, v.visit(node.index)?, var)) {
                         v.error("cannot ensure array access is in bounds", node.left.pos().extend(node.pos))
                     }
+                    return C.Z3_mk_select(v.ctx, v.visit(node.left)?, v.visit(node.index)?)
                 }
                 ast.InfixExpr {
                     match node.op {
