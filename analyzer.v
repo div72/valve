@@ -250,6 +250,11 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                         v.visit(stmt) or { continue }
                     }
                 }
+                ast.Return {
+                    for expr in node.exprs {
+                        v.visit(expr) or { continue }
+                    }
+                }
                 ast.AsmStmt, ast.Module {}
                 else {
                     eprintln("unhandled stmt type: ${node.type_name()}")
