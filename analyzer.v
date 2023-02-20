@@ -11,6 +11,7 @@ struct Verifier {
 mut:
     file_path string
     error_count int
+    pos_stack []token.Pos
 
     ctx C.Z3_context
     // TODO: does Z3 have a mechanism for this?
@@ -31,6 +32,16 @@ fn (mut v Verifier) free() {
 }
 
 fn (mut v Verifier) error(msg string, pos token.Pos) {
+    mut line_nrs := [pos.line_nr]
+    for i, pos2 in v.pos_stack {
+        if pos2.line_nr in line_nrs || i == v.pos_stack.len - 1 {
+            continue
+        }
+
+        line_nrs << pos2.line_nr
+        eprintln(vutil.formatted_error("note:", "requested from here:", v.file_path, pos2))
+    }
+
     eprintln(vutil.formatted_error("error:", msg, v.file_path, pos))
     v.error_count += 1
 }
@@ -118,6 +129,8 @@ pub fn (mut v Verifier) assign(target ast.Node, value ast.Expr) {
 }
 
 pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
+    v.pos_stack << node.pos()
+    defer { v.pos_stack.pop() }
     match node {
         ast.Expr {
             match node {
