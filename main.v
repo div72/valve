@@ -2,9 +2,9 @@ module main
 
 import flag
 import os
+import v.ast
 import v.builder
 import v.pref
-
 
 fn main() {
     mut fp := flag.new_flag_parser(os.args)
@@ -40,6 +40,16 @@ fn main() {
     all_files << b.get_builtin_files()
     b.front_and_middle_stages(all_files)!
 
+    // FIXME: V bug? source_fn is not properly initialized in some trivial
+    // cases.
+    for file in b.parsed_files {
+        for stmt in file.stmts {
+            if stmt is ast.FnDecl {
+                b.table.fns[stmt.name].source_fn = voidptr(&stmt)
+            }
+        }
+    }
+
     mut verifier := new_verifier(files[0], b.table, verbose)
     defer { verifier.free() }
 
@@ -50,6 +60,12 @@ fn main() {
         }
 
         for stmt in file.stmts {
+            // We only feed the main to the verifier. The verifier should
+            // visit the called on its own.
+            if stmt is ast.FnDecl && (stmt as ast.FnDecl).short_name != "main" {
+                continue
+            }
+
             verifier.visit(stmt) or { continue }
         }
     }

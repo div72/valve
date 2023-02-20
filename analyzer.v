@@ -6,10 +6,10 @@ import v.util as vutil
 
 [noinit]
 struct Verifier {
-    file_path string
     verbose bool
     table ast.Table
 mut:
+    file_path string
     error_count int
 
     ctx C.Z3_context
@@ -91,6 +91,19 @@ fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
     C.Z3_solver_dec_ref(v.ctx, solver)
 }
 
+pub fn (mut v Verifier) assign(target ast.Node, value ast.Expr) {
+    if value is ast.ArrayInit {
+        if (value.is_fixed && value.has_val) || (!value.is_fixed && value.exprs.len > 0) {
+            name := get_name(target) or { return }
+            v.facts << C.Z3_mk_eq(v.ctx, v.make_variable("${name}.len", ast.int_type_idx), C.Z3_mk_int64(v.ctx, value.exprs.len, C.Z3_mk_int_sort(v.ctx)))
+        }
+    }
+
+    // TODO: Handle variables being changed.
+    fact := C.Z3_mk_eq(v.ctx, v.visit(&target) or { return }, v.visit(value) or { return })
+    v.facts << fact
+}
+
 pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
     match node {
         ast.Expr {
@@ -99,15 +112,43 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     return if node.val { C.Z3_mk_true(v.ctx) } else { C.Z3_mk_false(v.ctx) }
                 }
                 ast.CallExpr {
-                    for arg in node.args {
-                        v.visit(arg.expr) or { continue }
+                    previous_facts_marker := v.facts.len
+
+                    // Do not dive into builtin funcs for now.
+                    if node.name != "println" {
+                        if f := v.table.find_fn(node.name) {
+                            if v.verbose {
+                                eprintln("Going down function: ${f.name}")
+                            }
+
+                            prev_file_path := v.file_path
+                            v.file_path = f.file
+
+                            fn_decl := unsafe { &ast.FnDecl(f.source_fn) }
+                            for i, param in fn_decl.params {
+                                v.assign(param, node.args[i].expr)
+                            }
+
+                            for stmt in fn_decl.stmts {
+                                v.visit(stmt)
+                            }
+
+                            v.file_path = prev_file_path
+                        }
+                    } else {
+                        // Still visit the arguments though.
+                        for arg in node.args {
+                            v.visit(arg.expr) or { continue }
+                        }
                     }
+
+                    v.facts.trim(previous_facts_marker)
                 }
                 ast.CastExpr {
                     v.visit(node.expr)
                 }
                 ast.Ident {
-                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.info.typ)
+                    return v.make_variable(get_name(ast.Expr(node)) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.info.typ)
                 }
                 ast.IfExpr {
                     // Else and other branches not handled yet.
@@ -228,7 +269,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                             node_.typ = ast.int_type_idx
                         }
                     }
-                    return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return none }, node_.typ)
+                    return v.make_variable(get_name(ast.Expr(node)) or { eprintln("unhandled name expr") return none }, node_.typ)
                 }
                 else {
                     eprintln("unhandled expr type: ${node.type_name()}")
@@ -249,16 +290,7 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                         left := node.left[i]
                         right := node.right[i]
 
-                        if right is ast.ArrayInit {
-                            if (right.is_fixed && right.has_val) || (!right.is_fixed && right.exprs.len > 0) {
-                                name := get_name(left) or { continue }
-                                v.facts << C.Z3_mk_eq(v.ctx, v.make_variable("${name}.len", ast.int_type_idx), C.Z3_mk_int64(v.ctx, right.exprs.len, C.Z3_mk_int_sort(v.ctx)))
-                            }
-                        }
-
-                        // TODO: Handle variables being changed.
-                        fact := C.Z3_mk_eq(v.ctx, v.visit(left) or { continue }, v.visit(right) or { continue })
-                        v.facts << fact
+                        v.assign(left, right)
                     }
                 }
                 ast.ConstDecl {

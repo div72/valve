@@ -6,14 +6,24 @@ fn find_vlib() string {
     return "${os.dir(v_path)}/vlib"
 }
 
-fn get_name(expr ast.Expr) ?string {
+fn get_name(expr ast.Node) ?string {
     match expr {
-        ast.Ident {
-            return expr.name
+        ast.Expr {
+            match expr {
+                ast.Ident {
+                    return expr.name
+                }
+                ast.SelectorExpr {
+                    left := get_name(expr.expr) or { return none }
+                    return "${left}.${expr.field_name}"
+                }
+                else {
+                    return none
+                }
+            }
         }
-        ast.SelectorExpr {
-            left := get_name(expr.expr) or { return none }
-            return "${left}.${expr.field_name}"
+        ast.Param {
+            return expr.name
         }
         else {
             return none
