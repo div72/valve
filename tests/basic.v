@@ -11,4 +11,10 @@ fn main() {
 
     assert true && true
     assert true || false
+
+    assert 6 & 10 == 2
+    assert 8 | 7 == 15
+    assert 1 ^ 3 == 2
+    assert 5 << 2 == 20
+    assert 20 >> 1 == 10
 }

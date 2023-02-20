@@ -233,24 +233,29 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                             return C.Z3_mk_mod(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
                         .xor {
-                            return C.Z3_mk_bvxor(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                            // TODO: Use the proper sizes/signednesses.
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvxor(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                              C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         .pipe {
-                            return C.Z3_mk_bvor(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvor(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                             C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         .amp {
-                            return C.Z3_mk_bvand(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvand(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                              C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         .left_shift {
-                            // TODO: Use the proper size of integer instead of
-                            // 64.
-                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvshl(v.ctx, C.Z3_mk_int2bv(v.ctx, v.visit(node.left)?, 64), v.visit(node.right)?), true)
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvshl(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                              C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         .right_shift {
-                            return C.Z3_mk_bvlshr(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvlshr(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                               C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         .unsigned_right_shift {
-                            return C.Z3_mk_bvashr(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                            return C.Z3_mk_bv2int(v.ctx, C.Z3_mk_bvashr(v.ctx, C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.left)?),
+                                                                               C.Z3_mk_int2bv(v.ctx, 64, v.visit(node.right)?)), true)
                         }
                         else {
                             eprintln("unhandled op in infix expr: ${node.op}")
