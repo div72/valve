@@ -174,6 +174,24 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                         .mod {
                             return C.Z3_mk_mod(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
                         }
+                        .xor {
+                            return C.Z3_mk_bvxor(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
+                        .pipe {
+                            return C.Z3_mk_bvor(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
+                        .amp {
+                            return C.Z3_mk_bvand(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
+                        .left_shift {
+                            return C.Z3_mk_bvshl(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
+                        .right_shift {
+                            return C.Z3_mk_bvlshr(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
+                        .unsigned_right_shift {
+                            return C.Z3_mk_bvashr(v.ctx, v.visit(node.left)?, v.visit(node.right)?)
+                        }
                         else {
                             eprintln("unhandled op in infix expr: ${node.op}")
                         }
@@ -186,6 +204,9 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                     match node.op {
                         .not {
                             return C.Z3_mk_not(v.ctx, v.visit(node.right)?)
+                        }
+                        .bit_not {
+                            return C.Z3_mk_bvnot(v.ctx, v.visit(node.right)?)
                         }
                         else {
                             eprintln("unhandled op in prefix expr: ${node.op}")

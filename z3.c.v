@@ -64,6 +64,13 @@ fn C.Z3_mk_sub(c C.Z3_context, n u32, a &C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_unary_minus(c C.Z3_context, a C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_div(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_mod(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvnot(c C.Z3_context, a C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvor(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvxor(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvand(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvshl(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvlshr(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_bvashr(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_int64(c C.Z3_context, n i64, s C.Z3_sort) C.Z3_ast
 
 fn C.Z3_mk_string_symbol(c C.Z3_context, s &u8) C.Z3_symbol
