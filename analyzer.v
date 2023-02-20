@@ -103,6 +103,9 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
                         v.visit(arg.expr) or { continue }
                     }
                 }
+                ast.CastExpr {
+                    v.visit(node.expr)
+                }
                 ast.Ident {
                     return v.make_variable(get_name(node) or { eprintln("unhandled name expr") return C.Z3_mk_true(v.ctx) }, node.info.typ)
                 }
