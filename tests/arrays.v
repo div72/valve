@@ -5,6 +5,9 @@ fn main() {
     println(arr[0])
     println(fixed_array[4])
 
+    assert arr[0] == 1
+    assert fixed_array[fixed_array.len - 1] == 5
+
     if arr.len > 5 {
         println(arr[4])
     }

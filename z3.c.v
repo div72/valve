@@ -86,6 +86,7 @@ fn C.Z3_mk_bvsgt(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_bvsge(c C.Z3_context, l C.Z3_ast, r C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_int64(c C.Z3_context, n i64, s C.Z3_sort) C.Z3_ast
 fn C.Z3_mk_select(c C.Z3_context, a C.Z3_ast, i C.Z3_ast) C.Z3_ast
+fn C.Z3_mk_store(c C.Z3_context, a C.Z3_ast, i C.Z3_ast, v C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_int2bv(c C.Z3_context, n int, a C.Z3_ast) C.Z3_ast
 fn C.Z3_mk_bv2int(c C.Z3_context, a C.Z3_ast, is_signed bool) C.Z3_ast
 

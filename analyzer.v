@@ -121,6 +121,13 @@ pub fn (mut v Verifier) visit(node &ast.Node) ?C.Z3_ast {
     match node {
         ast.Expr {
             match node {
+                ast.ArrayInit {
+                    mut arr := v.make_variable(v.table.sym(node.typ).name, node.typ)
+                    for i, expr in node.exprs {
+                        arr = C.Z3_mk_store(v.ctx, arr, C.Z3_mk_int64(v.ctx, i, C.Z3_mk_int_sort(v.ctx)), v.visit(expr) or { continue })
+                    }
+                    return arr
+                }
                 ast.BoolLiteral {
                     return if node.val { C.Z3_mk_true(v.ctx) } else { C.Z3_mk_false(v.ctx) }
                 }
