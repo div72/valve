@@ -35,23 +35,36 @@ fn (mut v Verifier) error(msg string, pos token.Pos) {
     v.error_count += 1
 }
 
+fn (v &Verifier) v_type_to_z3_sort(typ ast.Type) C.Z3_sort {
+    if typ == 0 {
+        eprintln("This should never happen. (typ == 0)")
+        return C.Z3_mk_bool_sort(v.ctx)
+    } else if typ.is_int() {
+        return C.Z3_mk_int_sort(v.ctx)
+    } else if typ.is_bool() {
+        return C.Z3_mk_bool_sort(v.ctx)
+    } else if typ.is_float() {
+        return C.Z3_mk_real_sort(v.ctx)
+    } else {
+        sym := v.table.sym(typ)
+        match sym.info {
+            ast.Array, ast.ArrayFixed {
+                return C.Z3_mk_array_sort(v.ctx, C.Z3_mk_int_sort(v.ctx), v.v_type_to_z3_sort(sym.info.elem_type))
+            }
+            else {
+                eprintln("unhandled variable type: ${sym.name}")
+                return C.Z3_mk_uninterpreted_sort(v.ctx, C.Z3_mk_string_symbol(v.ctx, sym.name.str))
+            }
+        }
+    }
+}
+
 fn (mut v Verifier) make_variable(name string, typ ast.Type) C.Z3_ast {
     if v.verbose {
         eprintln("requesting name for ${name}")
     }
     symbol := C.Z3_mk_string_symbol(v.ctx, name.str)
-    if typ.is_int() {
-        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_int_sort(v.ctx))
-    } else if typ.is_bool() {
-        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
-    } else if typ == 0 {
-        eprintln("This should never happen. (typ == 0)")
-        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_bool_sort(v.ctx))
-    } else {
-        type_name := v.table.sym(typ).name
-        eprintln("unhandled variable type: ${type_name}")
-        return C.Z3_mk_const(v.ctx, symbol, C.Z3_mk_uninterpreted_sort(v.ctx, C.Z3_mk_string_symbol(v.ctx, type_name.str)))
-    }
+    return C.Z3_mk_const(v.ctx, symbol, v.v_type_to_z3_sort(typ))
 }
 
 fn (mut v Verifier) ensure(expr C.Z3_ast) bool {
